@@ -8,11 +8,12 @@ namespace GICTask
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration,IWebHostEnvironment env)
         {
             Configuration = configuration;
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-
+            var builder = new ConfigurationBuilder()
+            .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true);
             using (var db = new PopulationContext())
             {
                 db.Database.EnsureCreated();
@@ -41,6 +42,11 @@ namespace GICTask
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+            }
+            
+            if (env.IsProduction() || env.IsStaging())
+            {
+                app.UseExceptionHandler("/Error");
             }
             app.UseHttpsRedirection();           
             app.UseRouting();

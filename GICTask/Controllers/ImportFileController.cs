@@ -18,21 +18,24 @@ namespace GICTask.Controllers
     [ApiController]
     public class ImportFileController : ControllerBase
     {
-        private readonly PopulationContext _context;
         private readonly ILogger<ImportFileController> _logger;
-        private readonly IWebHostEnvironment _environment;
-        public ImportFileController(ILogger<ImportFileController> logger, PopulationContext context, IWebHostEnvironment environment)
+        private BLLPopulation bLLPopulation;
+        public ImportFileController(ILogger<ImportFileController> logger, PopulationContext context)
         {
             _logger = logger;
-            _context = context;
-            _environment = environment;
+            bLLPopulation = new BLLPopulation(context);
         }
 
+        /// <summary>
+        /// Post File Excel.
+        /// </summary>
+        /// <returns>Status import DB</returns>
         [HttpPost]
         public async Task<ActionResult> OnPostImport()
         {
+            _logger.LogInformation("API endpoint called - " + Request.Path.ToString() + Request.QueryString);
             string folderName = "Upload";
-            string wwwPath = AppContext.BaseDirectory; //this._environment.WebRootPath;
+            string wwwPath = AppContext.BaseDirectory;
             string newPath = Path.Combine(wwwPath, folderName);
             if (!Directory.Exists(newPath))
             {
@@ -53,7 +56,8 @@ namespace GICTask.Controllers
                     using (var reader = ExcelReaderFactory.CreateReader(stream))
                     {
                         DataSet dsExcelRecords = reader.AsDataSet();
-                                                
+
+                        // Read Sheet Estimate.
                         DataTable dtEstimateRecords = dsExcelRecords.Tables[0];
                         for (int i = 1; i < dtEstimateRecords.Rows.Count; i++)
                         {
@@ -67,6 +71,7 @@ namespace GICTask.Controllers
                             lstEstimate.Add(item);
                         }
 
+                        // Read Sheet Actual.
                         DataTable dtActualRecords = dsExcelRecords.Tables[1];
                         for (int i = 1; i < dtActualRecords.Rows.Count; i++)
                         {
@@ -80,24 +85,12 @@ namespace GICTask.Controllers
                         }
                     }
                 }
-                try
-                {
-                    _context.tblActuals.AddRange(lstActual);
-                    await _context.SaveChangesAsync();
-
-                    _context.tblEstimates.AddRange(lstEstimate);
-                    await _context.SaveChangesAsync();
-                }
-                catch(Exception ex)
-                {
-                    return BadRequest("DB Error:"+ex.ToString());
-                }
-                
-                return Ok("Success:"+ JsonConvert.SerializeObject(lstActual));
+                string strReturn = await bLLPopulation.InitPopulations(lstActual, lstEstimate);
+                return Ok(strReturn);
             }
             else
-                return BadRequest("File lenght:" + file.Length);
-
+                return BadRequest("File lenght must > 0 !!!");
         }
+
     }
 }
