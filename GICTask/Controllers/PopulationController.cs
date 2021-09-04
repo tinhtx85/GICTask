@@ -10,12 +10,12 @@ namespace GICTask.Controllers
     [ApiController]
     public class PopulationController : ControllerBase
     {
-        private readonly PopulationContext _context;
+        private BLLPopulation bLLPopulation;
         private readonly ILogger<PopulationController> _logger;
         public PopulationController(ILogger<PopulationController> logger, PopulationContext context)
         {
             _logger = logger;
-            _context = context;
+            bLLPopulation = new BLLPopulation(context);
         }
         /// <summary>
         /// API Get state population
@@ -39,30 +39,10 @@ namespace GICTask.Controllers
             {
                 foreach (int stateId in statesNumbers)
                 {
-                    var itemActual = _context.tblActuals.FirstOrDefault(s => s.State == stateId);
-                    if (itemActual == null)
-                    {
-                        //return a sum of the value over all districts in the Estimates table
-                        double sumDistricts = _context.tblEstimates.Where(s => s.State == stateId).Sum(s => s.EstimatesPopulation);
-                        Population itemPopulation = new Population
-                        {
-                            State = stateId,
-                            Populations = sumDistricts
-                        };
-                        lstPopulation.Add(itemPopulation);
-                    }
-                    else
-                    {
-                        Population itemPopulation = new Population
-                        {
-                            State = stateId,
-                            Populations = itemActual.ActualPopulation
-                        };
-                        lstPopulation.Add(itemPopulation);
-                    }
+                    Population itemPopulation = bLLPopulation.GetPopulation(stateId);
+                    lstPopulation.Add(itemPopulation);
                 }
             }
-
             return Ok(lstPopulation);
         }
 

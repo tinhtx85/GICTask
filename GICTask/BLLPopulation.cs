@@ -45,5 +45,35 @@ namespace GICTask
                 return "DB Error:" + ex.ToString();
             }
         }
+
+        /// <summary>
+        /// Get Population From DB.
+        /// </summary>
+        /// <param name="stateId"> state ID</param>
+        /// <returns>Population item </returns>
+        public Population GetPopulation(int stateId)
+        {
+            var itemActual =  _context.tblActuals.FirstOrDefault(s => s.State == stateId);
+            if (itemActual == null)
+            {
+                //return a sum of the value over all districts in the Estimates table
+                double sumDistricts =  _context.tblEstimates.Where(s => s.State == stateId).Sum(s => s.EstimatesPopulation);
+                Population itemPopulation = new Population
+                {
+                    State = stateId,
+                    Populations = sumDistricts
+                };
+                return itemPopulation;
+            }
+            else
+            {
+                Population itemPopulation = new Population
+                {
+                    State = stateId,
+                    Populations = itemActual.ActualPopulation
+                };
+                return itemPopulation;
+            }
+        }
     }
 }
