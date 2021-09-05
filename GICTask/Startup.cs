@@ -8,12 +8,10 @@ namespace GICTask
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration,IWebHostEnvironment env)
+        public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-            var builder = new ConfigurationBuilder()
-            .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true);
             using (var db = new PopulationContext())
             {
                 db.Database.EnsureCreated();
